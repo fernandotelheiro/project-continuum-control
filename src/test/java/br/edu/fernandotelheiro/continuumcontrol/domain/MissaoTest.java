@@ -141,8 +141,13 @@ class MissaoTest {
     @Test
     void missaoPlanejadaNaoDeveAceitarIntervencao() {
         Missao missao = criarMissaoNormal();
+        Agente agente = new Agente("Agente 1", "Campo");
+        missao.designar(agente);
 
-        assertFalse(missao.aceitaIntervencao());
+        assertThrows(
+                TransicaoInvalidaException.class,
+                () -> missao.registrarIntervencao(agente, "Ajuste", "Teste", ImpactoIntervencao.MINIMO, null)
+        );
     }
 
     @Test

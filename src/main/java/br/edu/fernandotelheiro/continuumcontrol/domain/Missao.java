@@ -2,6 +2,7 @@ package br.edu.fernandotelheiro.continuumcontrol.domain;
 
 import br.edu.fernandotelheiro.continuumcontrol.domain.enums.PrioridadeMissao;
 import br.edu.fernandotelheiro.continuumcontrol.domain.enums.StatusMissao;
+import br.edu.fernandotelheiro.continuumcontrol.domain.enums.ImpactoIntervencao;
 import br.edu.fernandotelheiro.continuumcontrol.domain.exception.RegraDeNegocioException;
 import br.edu.fernandotelheiro.continuumcontrol.domain.exception.TransicaoInvalidaException;
 import jakarta.persistence.*;
@@ -210,6 +211,43 @@ public class Missao {
 
     public boolean aceitaIntervencao() {
         return status == StatusMissao.EM_EXECUCAO;
+    }
+
+
+    public boolean possuiAgente(Agente agente) {
+        return participacoes.stream()
+                .anyMatch(participacao ->
+                        participacao.getAgente() == agente
+                );
+    }
+
+    public Intervencao registrarIntervencao(
+            Agente agente,
+            String acao,
+            String justificativa,
+            ImpactoIntervencao impacto,
+            String resultado
+    ) {
+        if (!aceitaIntervencao()) {
+            throw new TransicaoInvalidaException(
+                    "Intervenção só pode ser registrada em missão em execução."
+            );
+        }
+
+        if (!possuiAgente(agente)) {
+            throw new RegraDeNegocioException(
+                    "O agente não participa desta missão."
+            );
+        }
+
+        return new Intervencao(
+                this,
+                agente,
+                acao,
+                justificativa,
+                impacto,
+                resultado
+        );
     }
 
     public Long getId() {

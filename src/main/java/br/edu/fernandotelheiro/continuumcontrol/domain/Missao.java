@@ -2,6 +2,8 @@ package br.edu.fernandotelheiro.continuumcontrol.domain;
 
 import br.edu.fernandotelheiro.continuumcontrol.domain.enums.PrioridadeMissao;
 import br.edu.fernandotelheiro.continuumcontrol.domain.enums.StatusMissao;
+import br.edu.fernandotelheiro.continuumcontrol.domain.exception.RegraDeNegocioException;
+import br.edu.fernandotelheiro.continuumcontrol.domain.exception.TransicaoInvalidaException;
 import jakarta.persistence.*;
 
 import java.time.OffsetDateTime;
@@ -39,7 +41,7 @@ public class Missao {
 
     @OneToMany(
             mappedBy = "missao",
-            cascade = CascadeType.PERSIST
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE}
     )
     private List<ParticipacaoMissao> participacoes = new ArrayList<>();
 
@@ -59,12 +61,155 @@ public class Missao {
             OffsetDateTime destinoTemporal,
             PrioridadeMissao prioridade
     ) {
+        if (!anomalia.aceitaNovaMissao()) {
+            throw new RegraDeNegocioException(
+                    "Anomalia irreversível não aceita nova missão."
+            );
+        }
+
         this.anomalia = anomalia;
         this.codigo = codigo;
         this.objetivo = objetivo;
         this.destinoTemporal = destinoTemporal;
         this.prioridade = prioridade;
         this.status = StatusMissao.PLANEJADA;
+    }
+
+    public boolean exigeAutorizacao() {
+        return prioridade == PrioridadeMissao.EMERGENCIA
+                || anomalia.isCritica();
+    }
+
+    public void designar(Agente agente) {
+        if (status != StatusMissao.PLANEJADA
+                && status != StatusMissao.AUTORIZADA) {
+
+            throw new TransicaoInvalidaException(
+                    "Não é possível designar agente no estado atual da missão."
+            );
+        }
+
+        if (!agente.estaDisponivel()) {
+            throw new RegraDeNegocioException(
+                    "Somente agente disponível pode ser designado."
+            );
+        }
+
+        boolean jaParticipa = participacoes.stream()
+                .anyMatch(participacao -> participacao.getAgente() == agente);
+
+        if (jaParticipa) {
+            throw new RegraDeNegocioException(
+                    "Agente já está designado para esta missão."
+            );
+        }
+
+        participacoes.add(new ParticipacaoMissao(this, agente));
+    }
+
+    public void autorizar() {
+        if (status != StatusMissao.PLANEJADA) {
+            throw new TransicaoInvalidaException(
+                    "Somente missão planejada pode ser autorizada."
+            );
+        }
+
+        status = StatusMissao.AUTORIZADA;
+    }
+
+    public void iniciar() {
+        if (status != StatusMissao.PLANEJADA
+                && status != StatusMissao.AUTORIZADA) {
+
+            throw new TransicaoInvalidaException(
+                    "Missão não pode ser iniciada no estado atual."
+            );
+        }
+
+        if (participacoes.isEmpty()) {
+            throw new RegraDeNegocioException(
+                    "Missão precisa de pelo menos um agente para iniciar."
+            );
+        }
+
+        if (exigeAutorizacao()
+                && status != StatusMissao.AUTORIZADA) {
+
+            throw new TransicaoInvalidaException(
+                    "Missão exige autorização antes de iniciar."
+            );
+        }
+
+        boolean todosDisponiveis = participacoes.stream()
+                .allMatch(participacao ->
+                        participacao.getAgente().estaDisponivel()
+                );
+
+        if (!todosDisponiveis) {
+            throw new RegraDeNegocioException(
+                    "Todos os agentes precisam estar disponíveis para iniciar a missão."
+            );
+        }
+
+        for (ParticipacaoMissao participacao : participacoes) {
+            participacao.getAgente().entrarEmMissao();
+        }
+
+        anomalia.iniciarCorrecao();
+
+        status = StatusMissao.EM_EXECUCAO;
+    }
+
+    public void concluir(Encerramento encerramento) {
+        if (status != StatusMissao.EM_EXECUCAO) {
+            throw new TransicaoInvalidaException(
+                    "Somente missão em execução pode ser concluída."
+            );
+        }
+
+        this.encerramento = encerramento;
+
+        for (ParticipacaoMissao participacao : participacoes) {
+            participacao.getAgente().liberar();
+        }
+
+        anomalia.estabilizar();
+
+        status = StatusMissao.CONCLUIDA;
+    }
+
+    public void falhar(Encerramento encerramento) {
+        if (status != StatusMissao.EM_EXECUCAO) {
+            throw new TransicaoInvalidaException(
+                    "Somente missão em execução pode falhar."
+            );
+        }
+
+        this.encerramento = encerramento;
+
+        for (ParticipacaoMissao participacao : participacoes) {
+            participacao.getAgente().liberar();
+        }
+
+        anomalia.reabrir();
+
+        status = StatusMissao.FALHOU;
+    }
+
+    public void cancelar() {
+        if (status != StatusMissao.PLANEJADA
+                && status != StatusMissao.AUTORIZADA) {
+
+            throw new TransicaoInvalidaException(
+                    "Missão não pode ser cancelada no estado atual."
+            );
+        }
+
+        status = StatusMissao.CANCELADA;
+    }
+
+    public boolean aceitaIntervencao() {
+        return status == StatusMissao.EM_EXECUCAO;
     }
 
     public Long getId() {

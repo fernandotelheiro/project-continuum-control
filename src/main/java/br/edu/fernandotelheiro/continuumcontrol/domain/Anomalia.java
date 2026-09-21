@@ -2,6 +2,7 @@ package br.edu.fernandotelheiro.continuumcontrol.domain;
 
 import br.edu.fernandotelheiro.continuumcontrol.domain.enums.RiscoAnomalia;
 import br.edu.fernandotelheiro.continuumcontrol.domain.enums.StatusAnomalia;
+import br.edu.fernandotelheiro.continuumcontrol.domain.exception.TransicaoInvalidaException;
 import jakarta.persistence.*;
 
 import java.time.OffsetDateTime;
@@ -56,6 +57,59 @@ public class Anomalia {
         this.observacoes = observacoes;
         this.risco = risco;
         this.status = StatusAnomalia.DETECTADA;
+    }
+
+    public boolean aceitaNovaMissao() {
+        return status != StatusAnomalia.IRREVERSIVEL;
+    }
+
+    public boolean isCritica() {
+        return risco == RiscoAnomalia.CRITICO;
+    }
+
+    public void iniciarCorrecao() {
+        if (status != StatusAnomalia.DETECTADA
+                && status != StatusAnomalia.EM_ANALISE
+                && status != StatusAnomalia.CONFIRMADA) {
+
+            throw new TransicaoInvalidaException(
+                    "Anomalia não pode iniciar correção no estado atual."
+            );
+        }
+
+        status = StatusAnomalia.EM_CORRECAO;
+    }
+
+    public void estabilizar() {
+        if (status != StatusAnomalia.EM_CORRECAO) {
+            throw new TransicaoInvalidaException(
+                    "Somente anomalia em correção pode ser estabilizada."
+            );
+        }
+
+        status = StatusAnomalia.ESTABILIZADA;
+    }
+
+    public void reabrir() {
+        if (status != StatusAnomalia.EM_CORRECAO) {
+            throw new TransicaoInvalidaException(
+                    "Somente anomalia em correção pode ser reaberta."
+            );
+        }
+
+        status = StatusAnomalia.CONFIRMADA;
+    }
+
+    public void marcarIrreversivel() {
+        if (status == StatusAnomalia.ESTABILIZADA
+                || status == StatusAnomalia.IRREVERSIVEL) {
+
+            throw new TransicaoInvalidaException(
+                    "Anomalia não pode ser marcada como irreversível no estado atual."
+            );
+        }
+
+        status = StatusAnomalia.IRREVERSIVEL;
     }
 
     public Long getId() {

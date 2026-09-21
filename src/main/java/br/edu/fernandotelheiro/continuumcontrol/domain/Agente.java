@@ -1,6 +1,7 @@
 package br.edu.fernandotelheiro.continuumcontrol.domain;
 
 import br.edu.fernandotelheiro.continuumcontrol.domain.enums.StatusAgente;
+import br.edu.fernandotelheiro.continuumcontrol.domain.exception.TransicaoInvalidaException;
 import jakarta.persistence.*;
 
 @Entity
@@ -31,6 +32,40 @@ public class Agente {
         this.nome = nome;
         this.especialidade = especialidade;
         this.status = StatusAgente.DISPONIVEL;
+    }
+
+    public boolean estaDisponivel() {
+        return status == StatusAgente.DISPONIVEL;
+    }
+
+    public void entrarEmMissao() {
+        if (status != StatusAgente.DISPONIVEL) {
+            throw new TransicaoInvalidaException(
+                    "Somente agente disponível pode entrar em missão."
+            );
+        }
+
+        status = StatusAgente.EM_MISSAO;
+    }
+
+    public void liberar() {
+        if (status != StatusAgente.EM_MISSAO) {
+            throw new TransicaoInvalidaException(
+                    "Somente agente em missão pode ser liberado."
+            );
+        }
+
+        status = StatusAgente.DISPONIVEL;
+    }
+
+    public void suspender() {
+        if (status != StatusAgente.DISPONIVEL) {
+            throw new TransicaoInvalidaException(
+                    "Somente agente disponível pode ser suspenso."
+            );
+        }
+
+        status = StatusAgente.SUSPENSO;
     }
 
     public Long getId() {

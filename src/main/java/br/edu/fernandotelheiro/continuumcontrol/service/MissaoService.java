@@ -6,9 +6,14 @@ import br.edu.fernandotelheiro.continuumcontrol.domain.Autorizacao;
 import br.edu.fernandotelheiro.continuumcontrol.domain.Encerramento;
 import br.edu.fernandotelheiro.continuumcontrol.domain.Intervencao;
 import br.edu.fernandotelheiro.continuumcontrol.domain.Missao;
-import br.edu.fernandotelheiro.continuumcontrol.domain.enums.ImpactoIntervencao;
-import br.edu.fernandotelheiro.continuumcontrol.domain.enums.PrioridadeMissao;
+import br.edu.fernandotelheiro.continuumcontrol.domain.enums.StatusMissao;
 import br.edu.fernandotelheiro.continuumcontrol.domain.exception.RecursoNaoEncontradoException;
+import br.edu.fernandotelheiro.continuumcontrol.dto.AtualizarMissaoRequest;
+import br.edu.fernandotelheiro.continuumcontrol.dto.CriarMissaoRequest;
+import br.edu.fernandotelheiro.continuumcontrol.dto.EncerramentoRequest;
+import br.edu.fernandotelheiro.continuumcontrol.dto.IntervencaoRequest;
+import br.edu.fernandotelheiro.continuumcontrol.dto.IntervencaoResponse;
+import br.edu.fernandotelheiro.continuumcontrol.dto.MissaoResponse;
 import br.edu.fernandotelheiro.continuumcontrol.repository.AgenteRepository;
 import br.edu.fernandotelheiro.continuumcontrol.repository.AnomaliaRepository;
 import br.edu.fernandotelheiro.continuumcontrol.repository.AutorizacaoRepository;
@@ -18,8 +23,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.OffsetDateTime;
 
 @Service
 public class MissaoService {
@@ -45,28 +48,40 @@ public class MissaoService {
     }
 
     @Transactional
-    public Missao criar(
-            Long anomaliaId,
-            String codigo,
-            String objetivo,
-            OffsetDateTime destinoTemporal,
-            PrioridadeMissao prioridade
-    ) {
-        Anomalia anomalia = buscarAnomalia(anomaliaId);
+    public MissaoResponse criar(CriarMissaoRequest request) {
+        Anomalia anomalia = buscarAnomalia(request.anomaliaId());
 
         Missao missao = new Missao(
                 anomalia,
-                codigo,
-                objetivo,
-                destinoTemporal,
-                prioridade
+                request.codigo(),
+                request.objetivo(),
+                request.destinoTemporal(),
+                request.prioridade()
         );
 
-        return missaoRepository.save(missao);
+        missaoRepository.save(missao);
+
+        return MissaoResponse.de(missao);
     }
 
     @Transactional
-    public Missao designarAgente(
+    public MissaoResponse atualizar(
+            Long id,
+            AtualizarMissaoRequest request
+    ) {
+        Missao missao = buscarMissao(id);
+
+        missao.atualizarDados(
+                request.objetivo(),
+                request.destinoTemporal(),
+                request.prioridade()
+        );
+
+        return MissaoResponse.de(missao);
+    }
+
+    @Transactional
+    public MissaoResponse designarAgente(
             Long missaoId,
             Long agenteId
     ) {
@@ -75,11 +90,11 @@ public class MissaoService {
 
         missao.designar(agente);
 
-        return missao;
+        return MissaoResponse.de(missao);
     }
 
     @Transactional
-    public Missao autorizar(
+    public MissaoResponse autorizar(
             Long missaoId,
             String responsavel,
             String observacao
@@ -96,75 +111,101 @@ public class MissaoService {
 
         autorizacaoRepository.save(autorizacao);
 
-        return missao;
+        return MissaoResponse.de(missao);
     }
 
     @Transactional
-    public Missao iniciar(Long missaoId) {
+    public MissaoResponse iniciar(Long missaoId) {
         Missao missao = buscarMissao(missaoId);
 
         missao.iniciar();
 
         missaoRepository.saveAndFlush(missao);
 
-        return missao;
+        return MissaoResponse.de(missao);
     }
 
     @Transactional
-    public Intervencao registrarIntervencao(
+    public IntervencaoResponse registrarIntervencao(
             Long missaoId,
-            Long agenteId,
-            String acao,
-            String justificativa,
-            ImpactoIntervencao impacto,
-            String resultado
+            IntervencaoRequest request
     ) {
         Missao missao = buscarMissao(missaoId);
-        Agente agente = buscarAgente(agenteId);
+        Agente agente = buscarAgente(request.agenteId());
 
         Intervencao intervencao = missao.registrarIntervencao(
                 agente,
-                acao,
-                justificativa,
-                impacto,
-                resultado
+                request.acao(),
+                request.justificativa(),
+                request.impacto(),
+                request.resultado()
         );
 
-        return intervencaoRepository.save(intervencao);
+        intervencaoRepository.save(intervencao);
+
+        return IntervencaoResponse.de(intervencao);
     }
 
     @Transactional
-    public Missao concluir(
+    public MissaoResponse concluir(
             Long missaoId,
-            Encerramento encerramento
+            EncerramentoRequest request
     ) {
         Missao missao = buscarMissao(missaoId);
+
+        Encerramento encerramento = new Encerramento(
+                request.resultado(),
+                request.resumo(),
+                request.impactoObservado()
+        );
 
         missao.concluir(encerramento);
 
-        return missao;
+        return MissaoResponse.de(missao);
     }
 
     @Transactional
-    public Missao falhar(
+    public MissaoResponse falhar(
             Long missaoId,
-            Encerramento encerramento
+            EncerramentoRequest request
     ) {
         Missao missao = buscarMissao(missaoId);
 
+        Encerramento encerramento = new Encerramento(
+                request.resultado(),
+                request.resumo(),
+                request.impactoObservado()
+        );
+
         missao.falhar(encerramento);
 
-        return missao;
+        return MissaoResponse.de(missao);
     }
 
     @Transactional(readOnly = true)
-    public Missao buscar(Long id) {
-        return buscarMissao(id);
+    public MissaoResponse buscar(Long id) {
+        Missao missao = buscarMissao(id);
+
+        return MissaoResponse.de(missao);
     }
 
     @Transactional(readOnly = true)
-    public Page<Missao> listar(Pageable pageable) {
-        return missaoRepository.findAll(pageable);
+    public Page<MissaoResponse> listar(
+            StatusMissao status,
+            Pageable pageable
+    ) {
+        Page<Missao> missoes;
+
+        if (status != null) {
+            missoes = missaoRepository.findByStatus(
+                    status,
+                    pageable
+            );
+        } else {
+            missoes = missaoRepository.findAll(pageable);
+        }
+
+        return missoes.map(MissaoResponse::de);
     }
 
     private Missao buscarMissao(Long id) {

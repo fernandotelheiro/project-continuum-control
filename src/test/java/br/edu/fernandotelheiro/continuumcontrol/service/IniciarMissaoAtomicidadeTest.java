@@ -1,5 +1,6 @@
 package br.edu.fernandotelheiro.continuumcontrol.service;
-
+import br.edu.fernandotelheiro.continuumcontrol.dto.CriarMissaoRequest;
+import br.edu.fernandotelheiro.continuumcontrol.dto.MissaoResponse;
 import br.edu.fernandotelheiro.continuumcontrol.TestcontainersConfiguration;
 import br.edu.fernandotelheiro.continuumcontrol.domain.Agente;
 import br.edu.fernandotelheiro.continuumcontrol.domain.Anomalia;
@@ -87,25 +88,28 @@ class IniciarMissaoAtomicidadeTest {
                 )
         );
 
-        Missao missao = missaoService.criar(
-                anomalia.getId(),
-                "MIS-ATOMICIDADE-001",
-                "Validar rollback da operação de início",
-                OffsetDateTime.now().plusDays(1),
-                PrioridadeMissao.NORMAL
+
+        MissaoResponse missao = missaoService.criar(
+                new CriarMissaoRequest(
+                        anomalia.getId(),
+                        "MIS-ATOMICIDADE-001",
+                        "Validar rollback da operação de início",
+                        OffsetDateTime.now().plusDays(1),
+                        PrioridadeMissao.NORMAL
+                )
         );
 
         missaoService.designarAgente(
-                missao.getId(),
+                missao.id(),
                 agente1.getId()
         );
 
         missaoService.designarAgente(
-                missao.getId(),
+                missao.id(),
                 agente2.getId()
         );
 
-        Long missaoId = missao.getId();
+        Long missaoId = missao.id();
         Long anomaliaId = anomalia.getId();
         Long agente1Id = agente1.getId();
         Long agente2Id = agente2.getId();

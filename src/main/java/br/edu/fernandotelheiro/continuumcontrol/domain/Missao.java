@@ -76,6 +76,23 @@ public class Missao {
         this.status = StatusMissao.PLANEJADA;
     }
 
+
+    public void atualizarDados(
+            String objetivo,
+            OffsetDateTime destinoTemporal,
+            PrioridadeMissao prioridade
+    ) {
+        if (status != StatusMissao.PLANEJADA) {
+            throw new TransicaoInvalidaException(
+                    "Somente missão planejada pode ter seus dados alterados."
+            );
+        }
+
+        this.objetivo = objetivo;
+        this.destinoTemporal = destinoTemporal;
+        this.prioridade = prioridade;
+    }
+
     public boolean exigeAutorizacao() {
         return prioridade == PrioridadeMissao.EMERGENCIA
                 || anomalia.isCritica();

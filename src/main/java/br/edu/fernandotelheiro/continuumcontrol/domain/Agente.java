@@ -68,6 +68,15 @@ public class Agente {
         status = StatusAgente.SUSPENSO;
     }
 
+    public void atualizarCadastro(
+            String nome,
+            String especialidade
+    ) {
+        this.nome = nome;
+        this.especialidade = especialidade;
+    }
+
+
     public Long getId() {
         return id;
     }

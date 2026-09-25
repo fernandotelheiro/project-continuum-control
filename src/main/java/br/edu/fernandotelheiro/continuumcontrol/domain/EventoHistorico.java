@@ -46,6 +46,21 @@ public class EventoHistorico {
         this.importancia = importancia;
     }
 
+
+    public void atualizar(
+            String titulo,
+            String descricao,
+            OffsetDateTime dataEvento,
+            String localizacao,
+            ImportanciaEvento importancia
+    ) {
+        this.titulo = titulo;
+        this.descricao = descricao;
+        this.dataEvento = dataEvento;
+        this.localizacao = localizacao;
+        this.importancia = importancia;
+    }
+
     public Long getId() {
         return id;
     }

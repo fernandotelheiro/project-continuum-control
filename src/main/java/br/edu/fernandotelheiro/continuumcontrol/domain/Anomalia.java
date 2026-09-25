@@ -112,6 +112,26 @@ public class Anomalia {
         status = StatusAnomalia.IRREVERSIVEL;
     }
 
+
+    public void reavaliarRisco(
+            String descricao,
+            String origem,
+            String observacoes,
+            RiscoAnomalia risco
+    ) {
+        if (status == StatusAnomalia.ESTABILIZADA
+                || status == StatusAnomalia.IRREVERSIVEL) {
+            throw new TransicaoInvalidaException(
+                    "Anomalia encerrada não pode ser reavaliada."
+            );
+        }
+
+        this.descricao = descricao;
+        this.origem = origem;
+        this.observacoes = observacoes;
+        this.risco = risco;
+    }
+
     public Long getId() {
         return id;
     }

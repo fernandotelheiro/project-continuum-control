@@ -12,4 +12,5 @@ public interface AgenteRepository extends JpaRepository<Agente, Long> {
             StatusAgente status,
             Pageable pageable
     );
+    long countByStatus(StatusAgente status);
 }

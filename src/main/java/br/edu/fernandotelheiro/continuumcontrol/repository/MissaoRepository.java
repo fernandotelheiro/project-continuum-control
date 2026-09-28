@@ -12,4 +12,5 @@ public interface MissaoRepository extends JpaRepository<Missao, Long> {
             StatusMissao status,
             Pageable pageable
     );
+    long countByStatus(StatusMissao status);
 }

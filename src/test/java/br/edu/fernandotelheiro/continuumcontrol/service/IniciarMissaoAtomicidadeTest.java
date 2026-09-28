@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import jakarta.persistence.EntityManager;
 
 import java.time.OffsetDateTime;
 
@@ -44,6 +45,9 @@ class IniciarMissaoAtomicidadeTest {
 
     @Autowired
     private EventoHistoricoRepository eventoRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @MockitoSpyBean
     private MissaoRepository missaoRepository;
@@ -122,7 +126,7 @@ class IniciarMissaoAtomicidadeTest {
          * mas ainda estão dentro da transação do service.
          */
         doAnswer(invocacao -> {
-            invocacao.callRealMethod();
+            entityManager.flush();
 
             throw new RuntimeException(
                     "Falha simulada após o flush"
@@ -131,9 +135,14 @@ class IniciarMissaoAtomicidadeTest {
 
         // ACT
 
-        assertThrows(
+        RuntimeException erro = assertThrows(
                 RuntimeException.class,
                 () -> missaoService.iniciar(missaoId)
+        );
+
+        assertEquals(
+                "Falha simulada após o flush",
+                erro.getMessage()
         );
 
         // ASSERT

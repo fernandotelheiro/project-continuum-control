@@ -15,6 +15,20 @@ spring:
       hibernate:
         default_batch_fetch_size: 50
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 500ms
+      connect-timeout: 500ms
+      repositories:
+        enabled: false
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 60s
+
 server:
   port: ${SERVER_PORT:8080}
 

@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
 
 @Service
 public class AnomaliaService {
@@ -30,6 +31,10 @@ public class AnomaliaService {
     }
 
     @Transactional
+    @CacheEvict(
+            cacheNames = {"estado-operacional", "estabilidade"},
+            allEntries = true
+    )
     public AnomaliaResponse criar(
             CriarAnomaliaRequest request
     ) {
@@ -52,6 +57,10 @@ public class AnomaliaService {
     }
 
     @Transactional
+    @CacheEvict(
+            cacheNames = {"estado-operacional", "estabilidade"},
+            allEntries = true
+    )
     public AnomaliaResponse atualizar(
             Long id,
             AtualizarAnomaliaRequest request

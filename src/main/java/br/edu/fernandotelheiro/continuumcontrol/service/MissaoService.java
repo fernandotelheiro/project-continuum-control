@@ -23,6 +23,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+
 
 @Service
 public class MissaoService {
@@ -115,6 +117,10 @@ public class MissaoService {
     }
 
     @Transactional
+    @CacheEvict(
+            cacheNames = {"estado-operacional", "estabilidade"},
+            allEntries = true
+    )
     public MissaoResponse iniciar(Long missaoId) {
         Missao missao = buscarMissao(missaoId);
 
@@ -126,6 +132,10 @@ public class MissaoService {
     }
 
     @Transactional
+    @CacheEvict(
+            cacheNames = {"estado-operacional", "estabilidade"},
+            allEntries = true
+    )
     public IntervencaoResponse registrarIntervencao(
             Long missaoId,
             IntervencaoRequest request
@@ -147,6 +157,10 @@ public class MissaoService {
     }
 
     @Transactional
+    @CacheEvict(
+            cacheNames = {"estado-operacional", "estabilidade"},
+            allEntries = true
+    )
     public MissaoResponse concluir(
             Long missaoId,
             EncerramentoRequest request
@@ -165,6 +179,10 @@ public class MissaoService {
     }
 
     @Transactional
+    @CacheEvict(
+            cacheNames = {"estado-operacional", "estabilidade"},
+            allEntries = true
+    )
     public MissaoResponse falhar(
             Long missaoId,
             EncerramentoRequest request

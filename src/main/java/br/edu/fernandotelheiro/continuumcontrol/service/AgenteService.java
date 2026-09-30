@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
 
 @Service
 public class AgenteService {
@@ -22,6 +23,10 @@ public class AgenteService {
     }
 
     @Transactional
+    @CacheEvict(
+            cacheNames = {"estado-operacional", "estabilidade"},
+            allEntries = true
+    )
     public AgenteResponse criar(CriarAgenteRequest request) {
         Agente agente = new Agente(
                 request.nome(),
@@ -73,6 +78,10 @@ public class AgenteService {
     }
 
     @Transactional
+    @CacheEvict(
+            cacheNames = {"estado-operacional", "estabilidade"},
+            allEntries = true
+    )
     public void remover(Long id) {
         Agente agente = buscarAgente(id);
 

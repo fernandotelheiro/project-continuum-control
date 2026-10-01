@@ -24,6 +24,9 @@ spring:
       repositories:
         enabled: false
 
+  mongodb:
+    uri: ${MONGO_URI:mongodb://localhost:27017/continuum}
+
   cache:
     type: redis
     redis:

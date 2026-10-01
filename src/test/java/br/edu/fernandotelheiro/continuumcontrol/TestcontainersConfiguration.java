@@ -3,9 +3,10 @@ package br.edu.fernandotelheiro.continuumcontrol;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.mongodb.MongoDBContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
-import org.testcontainers.containers.GenericContainer;
 
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
@@ -17,11 +18,20 @@ public class TestcontainersConfiguration {
                 DockerImageName.parse("postgres:16")
         );
     }
+
     @Bean
     @ServiceConnection(name = "redis")
     GenericContainer<?> redisContainer() {
         return new GenericContainer<>(
                 DockerImageName.parse("redis:7")
         ).withExposedPorts(6379);
+    }
+
+    @Bean
+    @ServiceConnection
+    MongoDBContainer mongoContainer() {
+        return new MongoDBContainer(
+                DockerImageName.parse("mongo:7")
+        );
     }
 }

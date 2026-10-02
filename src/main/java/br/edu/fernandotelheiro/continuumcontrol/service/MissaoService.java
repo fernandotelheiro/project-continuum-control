@@ -11,20 +11,26 @@ import br.edu.fernandotelheiro.continuumcontrol.domain.exception.RecursoNaoEncon
 import br.edu.fernandotelheiro.continuumcontrol.dto.AtualizarMissaoRequest;
 import br.edu.fernandotelheiro.continuumcontrol.dto.CriarMissaoRequest;
 import br.edu.fernandotelheiro.continuumcontrol.dto.EncerramentoRequest;
+import br.edu.fernandotelheiro.continuumcontrol.dto.HistoricoResponse;
 import br.edu.fernandotelheiro.continuumcontrol.dto.IntervencaoRequest;
 import br.edu.fernandotelheiro.continuumcontrol.dto.IntervencaoResponse;
 import br.edu.fernandotelheiro.continuumcontrol.dto.MissaoResponse;
+import br.edu.fernandotelheiro.continuumcontrol.evento.MissaoMudouDeEstado;
+import br.edu.fernandotelheiro.continuumcontrol.historico.HistoricoRepository;
 import br.edu.fernandotelheiro.continuumcontrol.repository.AgenteRepository;
 import br.edu.fernandotelheiro.continuumcontrol.repository.AnomaliaRepository;
 import br.edu.fernandotelheiro.continuumcontrol.repository.AutorizacaoRepository;
 import br.edu.fernandotelheiro.continuumcontrol.repository.IntervencaoRepository;
 import br.edu.fernandotelheiro.continuumcontrol.repository.MissaoRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.cache.annotation.CacheEvict;
 
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class MissaoService {
@@ -34,19 +40,25 @@ public class MissaoService {
     private final AgenteRepository agenteRepository;
     private final AutorizacaoRepository autorizacaoRepository;
     private final IntervencaoRepository intervencaoRepository;
+    private final HistoricoRepository historicoRepository;
+    private final ApplicationEventPublisher publisher;
 
     public MissaoService(
             MissaoRepository missaoRepository,
             AnomaliaRepository anomaliaRepository,
             AgenteRepository agenteRepository,
             AutorizacaoRepository autorizacaoRepository,
-            IntervencaoRepository intervencaoRepository
+            IntervencaoRepository intervencaoRepository,
+            HistoricoRepository historicoRepository,
+            ApplicationEventPublisher publisher
     ) {
         this.missaoRepository = missaoRepository;
         this.anomaliaRepository = anomaliaRepository;
         this.agenteRepository = agenteRepository;
         this.autorizacaoRepository = autorizacaoRepository;
         this.intervencaoRepository = intervencaoRepository;
+        this.historicoRepository = historicoRepository;
+        this.publisher = publisher;
     }
 
     @Transactional
@@ -62,6 +74,12 @@ public class MissaoService {
         );
 
         missaoRepository.save(missao);
+
+        publicar(
+                missao,
+                "MISSAO_CRIADA",
+                Map.of()
+        );
 
         return MissaoResponse.de(missao);
     }
@@ -92,6 +110,15 @@ public class MissaoService {
 
         missao.designar(agente);
 
+        publicar(
+                missao,
+                "AGENTE_DESIGNADO",
+                Map.of(
+                        "agenteId",
+                        agenteId
+                )
+        );
+
         return MissaoResponse.de(missao);
     }
 
@@ -113,14 +140,19 @@ public class MissaoService {
 
         autorizacaoRepository.save(autorizacao);
 
+        publicar(
+                missao,
+                "MISSAO_AUTORIZADA",
+                Map.of(
+                        "responsavel",
+                        responsavel
+                )
+        );
+
         return MissaoResponse.de(missao);
     }
 
     @Transactional
-    @CacheEvict(
-            cacheNames = {"estado-operacional", "estabilidade"},
-            allEntries = true
-    )
     public MissaoResponse iniciar(Long missaoId) {
         Missao missao = buscarMissao(missaoId);
 
@@ -128,14 +160,16 @@ public class MissaoService {
 
         missaoRepository.saveAndFlush(missao);
 
+        publicar(
+                missao,
+                "MISSAO_INICIADA",
+                Map.of()
+        );
+
         return MissaoResponse.de(missao);
     }
 
     @Transactional
-    @CacheEvict(
-            cacheNames = {"estado-operacional", "estabilidade"},
-            allEntries = true
-    )
     public IntervencaoResponse registrarIntervencao(
             Long missaoId,
             IntervencaoRequest request
@@ -153,14 +187,23 @@ public class MissaoService {
 
         intervencaoRepository.save(intervencao);
 
+        publicar(
+                missao,
+                "INTERVENCAO_REGISTRADA",
+                Map.of(
+                        "agenteId",
+                        request.agenteId(),
+                        "acao",
+                        request.acao(),
+                        "impacto",
+                        request.impacto().name()
+                )
+        );
+
         return IntervencaoResponse.de(intervencao);
     }
 
     @Transactional
-    @CacheEvict(
-            cacheNames = {"estado-operacional", "estabilidade"},
-            allEntries = true
-    )
     public MissaoResponse concluir(
             Long missaoId,
             EncerramentoRequest request
@@ -175,14 +218,19 @@ public class MissaoService {
 
         missao.concluir(encerramento);
 
+        publicar(
+                missao,
+                "MISSAO_CONCLUIDA",
+                Map.of(
+                        "resultado",
+                        request.resultado()
+                )
+        );
+
         return MissaoResponse.de(missao);
     }
 
     @Transactional
-    @CacheEvict(
-            cacheNames = {"estado-operacional", "estabilidade"},
-            allEntries = true
-    )
     public MissaoResponse falhar(
             Long missaoId,
             EncerramentoRequest request
@@ -196,6 +244,15 @@ public class MissaoService {
         );
 
         missao.falhar(encerramento);
+
+        publicar(
+                missao,
+                "MISSAO_FALHOU",
+                Map.of(
+                        "resultado",
+                        request.resultado()
+                )
+        );
 
         return MissaoResponse.de(missao);
     }
@@ -224,6 +281,45 @@ public class MissaoService {
         }
 
         return missoes.map(MissaoResponse::de);
+    }
+
+    @Transactional(readOnly = true)
+    public List<HistoricoResponse> historico(Long missaoId) {
+
+        buscarMissao(missaoId);
+
+        return historicoRepository
+                .findByMissaoIdOrderByInstanteAsc(missaoId)
+                .stream()
+                .map(HistoricoResponse::de)
+                .toList();
+    }
+
+    private void publicar(
+            Missao missao,
+            String tipo,
+            Map<String, Object> detalhes
+    ) {
+        List<Long> agenteIds = missao.getParticipacoes()
+                .stream()
+                .map(participacao ->
+                        participacao.getAgente().getId()
+                )
+                .toList();
+
+        MissaoMudouDeEstado evento =
+                new MissaoMudouDeEstado(
+                        missao.getId(),
+                        missao.getCodigo(),
+                        missao.getAnomalia().getId(),
+                        agenteIds,
+                        tipo,
+                        missao.getStatus(),
+                        OffsetDateTime.now(),
+                        detalhes
+                );
+
+        publisher.publishEvent(evento);
     }
 
     private Missao buscarMissao(Long id) {

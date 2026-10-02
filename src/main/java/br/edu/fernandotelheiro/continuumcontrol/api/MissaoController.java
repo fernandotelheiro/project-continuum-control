@@ -16,6 +16,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import br.edu.fernandotelheiro.continuumcontrol.dto.HistoricoResponse;
+
+import java.util.List;
 
 import java.net.URI;
 
@@ -42,6 +45,12 @@ public class MissaoController {
         return missaoService.buscar(id);
     }
 
+    @GetMapping("/{id}/historico")
+    public List<HistoricoResponse> historico(
+            @PathVariable Long id
+    ) {
+        return missaoService.historico(id);
+    }
     @PostMapping
     public ResponseEntity<MissaoResponse> criar(
             @Valid @RequestBody CriarMissaoRequest request

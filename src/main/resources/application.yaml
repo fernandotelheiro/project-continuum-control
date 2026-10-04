@@ -40,3 +40,6 @@ management:
     web:
       exposure:
         include: health,info
+
+continuum:
+  senha-inicial: ${CONTINUUM_SENHA_INICIAL:continuum123}

@@ -5,4 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ParticipacaoMissaoRepository
         extends JpaRepository<ParticipacaoMissao, Long> {
+
+    boolean existsByMissao_IdAndAgente_Id(
+            Long missaoId,
+            Long agenteId
+    );
+
 }

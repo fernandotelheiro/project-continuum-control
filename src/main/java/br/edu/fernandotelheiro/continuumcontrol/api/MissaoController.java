@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import br.edu.fernandotelheiro.continuumcontrol.dto.HistoricoResponse;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -97,6 +98,13 @@ public class MissaoController {
     public MissaoResponse iniciar(@PathVariable Long id) {
         return missaoService.iniciar(id);
     }
+
+
+    @PreAuthorize(
+            "hasRole('SUPERVISOR') or " +
+                    "(hasRole('AGENTE') and " +
+                    "@guardaMissao.podeIntervir(#id, authentication.name))"
+    )
 
     @PostMapping("/{id}/intervencoes")
     public ResponseEntity<IntervencaoResponse> registrarIntervencao(

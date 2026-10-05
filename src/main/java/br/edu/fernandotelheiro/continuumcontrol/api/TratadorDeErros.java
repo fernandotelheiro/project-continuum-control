@@ -3,19 +3,22 @@ package br.edu.fernandotelheiro.continuumcontrol.api;
 import br.edu.fernandotelheiro.continuumcontrol.domain.exception.RegraDeNegocioException;
 import br.edu.fernandotelheiro.continuumcontrol.domain.exception.RecursoNaoEncontradoException;
 import br.edu.fernandotelheiro.continuumcontrol.domain.exception.TransicaoInvalidaException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -59,6 +62,27 @@ public class TratadorDeErros extends ResponseEntityExceptionHandler {
                 HttpStatus.CONFLICT,
                 "Operação viola uma restrição de integridade."
         );
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ProblemDetail> tratarAcessoNegado(
+            AccessDeniedException exception,
+            HttpServletRequest request
+    ) {
+        ProblemDetail problem =
+                ProblemDetail.forStatusAndDetail(
+                        HttpStatus.FORBIDDEN,
+                        "Você não tem permissão para realizar esta operação."
+                );
+
+        problem.setTitle("Forbidden");
+        problem.setInstance(
+                URI.create(request.getRequestURI())
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(problem);
     }
 
     @ExceptionHandler(Exception.class)

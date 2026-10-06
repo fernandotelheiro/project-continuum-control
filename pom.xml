@@ -132,6 +132,7 @@
     </dependencies>
 
     <build>
+        <finalName>continuum-control</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

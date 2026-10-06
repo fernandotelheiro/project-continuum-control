@@ -7,8 +7,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 
 @Component
+@Profile("dev")
+@Order(2)
 public class UsuariosIniciais implements CommandLineRunner {
 
     private final UsuarioRepository usuarioRepository;

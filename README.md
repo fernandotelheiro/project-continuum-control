@@ -755,8 +755,8 @@ O projeto deve poder ser executado sem depender da IDE ou de configurações exi
 Fluxo esperado em PowerShell:
 
 ```powershell
-git clone https://github.com/fernandotelheiro/continuum-control.git
-cd continuum-control
+git clone https://github.com/fernandotelheiro/project-continuum-control.git
+cd project-continuum-control
 
 Copy-Item .env.example .env
 
@@ -809,8 +809,4 @@ Os bancos utilizados pelos testes são iniciados automaticamente por Testcontain
 
 # Apoio utilizado
 
-Durante o desenvolvimento, ferramentas Inteligência Artificial foram utilizadas exclusivamente como apoio ao estudo, conforme permitido no escopo da disciplina. O uso se limitou a pesquisas de abordagens arquiteturais, esclarecimento de dúvidas teóricas, estudo de documentações e interpretação de mensagens de erro.
-
-Também houve apoio de colega(s) na orientação e revisão do trabalho.
-
-As decisões implementadas, o código produzido e a validação do funcionamento do sistema foram acompanhados e revisados durante o desenvolvimento.
+Durante o desenvolvimento, ferramentas de Inteligência Artificial foram utilizadas exclusivamente como apoio ao estudo, conforme permitido no escopo da disciplina. O uso se limitou a pesquisas de abordagens arquiteturais, esclarecimento de dúvidas teóricas, estudo de documentações e interpretação de mensagens de erro. 

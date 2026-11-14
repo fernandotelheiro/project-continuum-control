@@ -809,7 +809,7 @@ Os bancos utilizados pelos testes são iniciados automaticamente por Testcontain
 
 # Apoio utilizado
 
-Durante o desenvolvimento foram utilizados recursos de inteligência artificial como apoio para orientação, revisão de código, interpretação de erros e organização das etapas de implementação.
+Durante o desenvolvimento, ferramentas Inteligência Artificial foram utilizadas exclusivamente como apoio ao estudo, conforme permitido no escopo da disciplina. O uso se limitou a pesquisas de abordagens arquiteturais, esclarecimento de dúvidas teóricas, estudo de documentações e interpretação de mensagens de erro.
 
 Também houve apoio de colega(s) na orientação e revisão do trabalho.
 

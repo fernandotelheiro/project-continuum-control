@@ -2,16 +2,12 @@ spring:
   application:
     name: continuum-control
 
-  spring:
-    application:
-      name: continuum-control
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/continuum}
+    username: ${DB_USER:continuum}
+    password: ${DB_PASSWORD:senha-postgres-exemplo}
 
-    datasource:
-      url: ${DB_URL:jdbc:postgresql://localhost:5432/continuum}
-      username: ${DB_USER:continuum}
-      password: ${DB_PASSWORD:senha-postgres-exemplo}
-
-    jpa:
+  jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
@@ -49,4 +45,4 @@ management:
         include: health,info
 
 continuum:
-  senha-inicial: ${CONTINUUM_SENHA_INICIAL:continuum123}
+  senha-inicial: ${CONTINUUM_SENHA_INICIAL:senha-usuarios-exemplo}
